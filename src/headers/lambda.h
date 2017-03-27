@@ -35,7 +35,7 @@ public:
 
   void call();
 
-  int* getEnv(int addr);
+  int* getEnv(int *addr, bool is_ptr = true);
   void setEnv(int addr, int* ptr);
   
 private:

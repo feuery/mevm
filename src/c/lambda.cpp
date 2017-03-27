@@ -4,7 +4,7 @@
 
 #define doMath(opp) assert(op->param1_pointer);\
   int* top = _stack.top();\
-  int* _register = getEnv(op->param1);	\
+  int* _register = getEnv(&op->param1, op->param1_pointer);\
   _stack.pop();\
   *(_register) = *(_register) opp *top;
 
@@ -28,7 +28,7 @@ void Lambda::call() {
       break;
     }
     case PUSH: {
-      _stack.push(getEnv(op->param1));
+      _stack.push(getEnv(&op->param1, op->param1_pointer));
       break;
     }
     case POP: {
@@ -44,13 +44,19 @@ void Lambda::call() {
   }
 }
 
-int* Lambda::getEnv(int addr)
+int* Lambda::getEnv(int *addr, bool is_ptr)
 {
-  if(addr == 0) throw "Lambda::getEnv addr is 0";
-  else if(addr < 0) {
-    return params.at(-(addr + 1));
+  if(is_ptr) {
+    int index = *addr;
+    if(index == 0) throw "Lambda::getEnv index is 0";
+    else if(index < 0) {
+      return params.at(-(index + 1));
+    }
+    return env.at(index - 1);
   }
-  return env.at(addr - 1);
+  // A literal!
+  else 
+    return addr;    
 }
 
 void Lambda::setEnv(int addr, int* ptr)
