@@ -2,87 +2,106 @@
 #include <cassert>
 #include <lambda.h>
 
-#define doTypelessMath(opp, type) assert(op->param1_pointer);\
-  type* top = _stack.top();						\
-  printf("top is %d %f\n", *top, (float)(*top));			\
-  type* _register = (type*)getEnv(&op->param1, op->param1_pointer);\
-  _stack.pop();\
-  type result = (type)(*_register) opp (type)(*top);\
-  printf("Result is %d, %f\n", (int)result, (float)result);\
-  *(_register) = result;
-
-#define doMath(opp)\
-  if(op->param1_float) { puts("Tehään float-matikkaa\n"); doTypelessMath(opp, int); }\
-  else { puts("Tehään int-matikkaa\n"); doTypelessMath(opp, int); };
+#define doMath(opp) value_container *top = _stack.top();\
+      switch(top->type) {\
+      case INT: {\
+	int top_int = top->v.int_val;\
+				     \
+	if(op->param1_box->b) {					\
+	  pointer_container *vm_address = op->param1_box->b;	\
+	  value_container *machine_box = getEnv(*vm_address);	\
+								\
+	  switch(machine_box->type) {				\
+	  case INT: {						\
+	    machine_box->v.int_val opp top_int;			\
+	    break;						\
+	  }							\
+	  case FLOAT: {						\
+	    machine_box->v.float_val opp top_int;			\
+	    break;							\
+	  }							\
+	  }							\
+	}							\
+	else throw "op->param1_box->b is null";			\
+	break;\
+      }\
+      case FLOAT: {\
+	float top_float = top->v.float_val;\
+\
+	if(op->param1_box->b) {					\
+	  pointer_container *vm_address = op->param1_box->b;	\
+	  value_container *machine_box = getEnv(*vm_address);	\
+								\
+	  switch(machine_box->type) {				\
+	  case INT: {						\
+	    machine_box->v.int_val opp top_float;			\
+	    break;						\
+	  }							\
+	  case FLOAT: {						\
+	    machine_box->v.float_val opp top_float;		\
+	    break;						\
+	  }							\
+	  }							\
+	}\
+	else  throw "op->param1_box->b is null";	\
+	\
+	break;\
+      }\
+      }\
 
 void Lambda::call() {
   for(vector<op>::iterator op = code.begin(); op != code.end(); ++op) {
     switch(op->code) {
-      case INC: {
-        doMath(+)
-        break;
-      }
-      case DEC: {
-        doMath(-);
-        break;
-      }
-      case MUL: {
-        doMath(*);
-        break;
-      }
-      case DIV: {
-        doMath(/);
-        break;
-      }
-	// Pitäiskö tän tietää floattiudesta?
-      case PUSH: {
-	int* val = getEnv(&op->param1, op->param1_pointer);
-	printf("Pushing %d/%f\n", *val, (float)(*val));
-        _stack.push(val);
-        break;
-      }
-      case POP: {
-        if(op->param1_float) {
-	  float* top = (float*)_stack.top();
-	  _stack.pop();
-	  setEnv(op->param1, (int*)top);
-        }
-        else {
-	  int* top = _stack.top();
-	  _stack.pop();
-	  setEnv(op->param1, top);
-        }
-      }
+    case INC: {
+      doMath(+=);
+      break;
+    }
+    case DEC: {
+      doMath(-=);
+      break;
+    }
+    case MUL: {
+      doMath(*=);
+      break;
+    }
+    case DIV: {
+      doMath(/=);
+      break;
+    }
+    case PUSH: {
+      if(!op->param1_box->a) throw "Has to push a value";
+      value_container *val = op->param1_box->a;
+      _stack.push(val);
+      break;
+    }
+    case POP: {
+      if(!op->param1_box->b) throw "Can't POP to null";
+      value_container* c = _stack.top();
+      _stack.pop();
+      setEnv(*(op->param1_box->b), c);
+      break;
+    }
 
-      default:
-        printf("NOPping %s\n", opcode_to_str(op->code));
-        break;
+    default:
+      printf("NOPping %s\n", opcode_to_str(op->code));
+      break;
     }
   }
 }
 
-int* Lambda::getEnv(int *addr, bool is_ptr, bool is_float)
+value_container* Lambda::getEnv(pointer_container addr)
 {
-  if(is_ptr) {
-    int index = *addr;
-    if(index == 0) throw "Lambda::getEnv index is 0";
-    else if(index < 0) {
-      return params.at(-(index + 1));
-    }
-    return env.at(index - 1);
-  }
-  else {
-    printf("Lambda::getEnv() returning literal %d/%f\n", *addr, (float)(*addr));
-    return addr;
-  }
+  int val = addr.value;
+  if(val == 0) throw "Can't get variables from addr 0";
+  if (val < 0) { return params.at(-(val+1)); }
+  else return env.at(val-1);
 }
 
-void Lambda::setEnv(int addr, int* ptr)
+void Lambda::setEnv(pointer_container addr, value_container* ptr)
 {
-  if(addr == 0) throw "Lambda::getEnv addr is 0";
-  else if(addr < 0) {
-    params.at(-(addr + 1)) = ptr;
-  }
-  else
-    env.at(addr-1);
+  int val = addr.value;
+  if(val == 0) throw "Can't set variables to addr 0";
+  val--;
+  if (val < 0) { params[-(val+1)] = ptr; }
+  else env[val-1] = ptr;
 }
