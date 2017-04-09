@@ -49,6 +49,8 @@
       }\
       }\
 
+std::unordered_map<int, value_container*> data_section;
+
 void Lambda::call() {
   for(vector<op>::iterator op = code.begin(); op != code.end(); ++op) {
     switch(op->code) {
@@ -92,16 +94,22 @@ void Lambda::call() {
 value_container* Lambda::getEnv(pointer_container addr)
 {
   int val = addr.value;
-  if(val == 0) throw "Can't get variables from addr 0";
-  if (val < 0) { return params.at(-(val+1)); }
-  else return env.at(val-1);
+  if(!addr.is_data) {
+    if(val == 0) throw "Can't get variables from addr 0";
+    if (val < 0) { return params.at(-(val+1)); }
+    else return env.at(val-1);
+  }
+  else return data_section[val]; 
 }
 
 void Lambda::setEnv(pointer_container addr, value_container* ptr)
 {
   int val = addr.value;
-  if(val == 0) throw "Can't set variables to addr 0";
-  val--;
-  if (val < 0) { params[-(val+1)] = ptr; }
-  else env[val-1] = ptr;
+  if(!addr.is_data) {
+    if(val == 0) throw "Can't set variables to addr 0";
+    val--;
+    if (val < 0) { params[-(val+1)] = ptr; }
+    else env[val-1] = ptr;
+  }
+  else data_section[val] = ptr;
 }

@@ -5,6 +5,7 @@
 #include <vector>
 #include <stack>
 #include <either.h>
+#include <unordered_map>
 
 using std::vector;
 using std::stack;
@@ -25,7 +26,10 @@ struct value_container {
 
 struct pointer_container {
   int value;
+  bool is_data = false;
 };
+
+extern std::unordered_map<int, value_container*> data_section;
 
 class op {
  public:

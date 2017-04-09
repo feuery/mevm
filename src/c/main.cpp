@@ -1,5 +1,8 @@
+#include <unistd.h>
 #include <cstdio>
+#include <cstring>
 #include <lambda.h>
+#include <assembler.h>
 
 Either<value_container, pointer_container> create_push_param(int vv)
 {
@@ -22,6 +25,18 @@ Either<value_container, pointer_container> create_mul_param(int addr)
 
 int main(int argc, char** argv)
 {
+  // man 3 getopt
+
+  int opt = getopt(argc, argv, "c:");
+
+  if(opt == 'c') {
+    printf("Assembling %s\n", optarg);
+
+    generate_code(getLines(optarg), "out.mlisp");   
+    
+    return 0;
+  }
+  
   Lambda l;
   value k, iso_k;
   k.int_val = 12;

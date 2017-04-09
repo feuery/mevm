@@ -1,7 +1,13 @@
 #ifndef OPCODES_H
 #define OPCODES_H
 
-enum opcodes {
+template<typename T>
+struct result {
+  T result;
+  bool success;
+};
+
+enum opcodes: unsigned char {
   LABEL,
   JMP,
   CJMP,
@@ -27,4 +33,5 @@ enum opcodes {
   EQ};
 
 const char* opcode_to_str (opcodes c);
+result<opcodes> char_to_opcode(const char* c);
 #endif //OPCODES_H
