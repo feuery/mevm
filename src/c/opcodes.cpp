@@ -27,6 +27,7 @@ const char* opcode_to_str (opcodes c){
     case GOEQ: return "GOEQ";
     case LOEQ: return "LOEQ";
     case EQ: return "EQ";
+    case CALL: return "CALL";
     }
   return "Unknown opcode";
 }
@@ -100,6 +101,9 @@ result<opcodes> char_to_opcode(const char* c) {
   }
   else if(strcmp(c, "EQ") == 0) {
     return {EQ, true};
+  }
+  else if(strcmp(c, "CALL") == 0) {
+    return {CALL, true};
   }
   return {JMP, false};
 }

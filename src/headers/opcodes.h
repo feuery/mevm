@@ -30,7 +30,8 @@ enum opcodes: unsigned char {
   LT,
   GOEQ,
   LOEQ,
-  EQ};
+  EQ,
+  CALL};
 
 const char* opcode_to_str (opcodes c);
 result<opcodes> char_to_opcode(const char* c);

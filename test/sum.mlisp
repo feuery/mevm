@@ -1,4 +1,12 @@
-lambda LOL
-PUSH 33.22
-INC '1
-PUSH !33
+lambda SUM
+	EQ -1, 0
+	CJMP END
+	CAR -1
+	INC -2
+	PUSH -2
+	CDR -1
+	CALL 0, 2
+	
+	LABEL END
+	PUSH -2
+	RET

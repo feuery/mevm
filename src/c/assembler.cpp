@@ -176,7 +176,6 @@ void testTypeTags (long bin_param1, int bin_param1_alkuperainen, bool isFloat, b
     value_container *c = reversed.a;
     assert(c->type == isFloat? FLOAT: INT);
     assert(c->v.int_val == bin_param1_alkuperainen);
-    puts("Kaikki on hyvin");
   }
   else if(isData || isAddr) {
     auto reversed = generateContainer(bin_param1);
@@ -186,7 +185,6 @@ void testTypeTags (long bin_param1, int bin_param1_alkuperainen, bool isFloat, b
     assert(c->is_data || !isData);
     // You don't actually have to save the type tag to a pointer, only to a value
     assert(c->value == bin_param1_alkuperainen);
-    puts("Addresses seem to work");
   }
   else printf("Mikään ei ole totta %d, %d, %d\n", isAddr, isData, isFloat);
 }
@@ -198,7 +196,59 @@ void testTypeTags(long bin_param1, float bin_param1_alkuperainen, bool isFloat, 
   float f = reversed.a->v.float_val;
   assert(f == bin_param1_alkuperainen);
 }
-  
+
+result<long> makeFileParam(string& p) {
+  string param1 = trim(p);
+  result<long> r;
+  bool is1Addr = param1.c_str()[0] == '\'',
+    is1Data = param1.c_str()[0] == '!',
+    is1Float = param1.find(".") != string::npos;
+
+  const char* reg = "['!]?(\\d+\\.?\\d*)";
+  regex addr_to_value(reg);
+
+  if(!regex_match(param1.c_str(), addr_to_value)) {
+    r.success = false;
+    return r;
+  }
+    
+  string param1_sanitized = regex_replace(param1.c_str(), addr_to_value, "$1");
+
+  if(!is1Float) {
+    long bin_param1 = toInt(param1);
+    int bin_param1_alkuperainen = bin_param1;
+    bin_param1 = bin_param1 << 3;
+    bin_param1 |= is1Addr? 0x4: 0x0;
+    bin_param1 |= is1Data? 0x2: 0x0;
+    bin_param1 |= is1Float? 0x1: 0x0;
+
+    testTypeTags (bin_param1, bin_param1_alkuperainen, is1Float, is1Data, is1Addr);
+    r.success = true;
+    r.result = bin_param1;
+    return r;
+  }
+  else {
+    float f_param1 = toFloat(param1),
+      f_param1_original = f_param1;
+
+    value converter;
+    converter.float_val = f_param1;
+    long bin_param1 = converter.int_val;
+            
+    bin_param1 = bin_param1 << 3;
+    bin_param1 |= is1Addr? 0x4: 0x0;
+    bin_param1 |= is1Data? 0x2: 0x0;
+    bin_param1 |= is1Float? 0x1: 0x0;
+
+    assert(bin_param1 >> 3 == converter.int_val);
+
+    testTypeTags(bin_param1, f_param1_original, is1Float, is1Data, is1Addr);
+
+    r.success = true;
+    r.result = bin_param1;
+    return r;
+  }
+}
 
 void generate_code(vector<string> lines, const char *outputFilename) {
   FILE *f = fopen(outputFilename, "w");
@@ -206,15 +256,6 @@ void generate_code(vector<string> lines, const char *outputFilename) {
     printf("Opening %s for output failed\n", outputFilename);
     return;
   }
-
-  // for(int i = 0; i<2; i++) {
-  //   for(int j = 0; j<2; j++) {
-  //     if(i ^ j)
-  // 	for(int k = 0; k<2; k++) {
-  // 	  printf("[%d, %d, %d], 0x%08x\n", i, j, k, typeMask(i, j, k));
-  // 	}
-  //   }
-  // }
 
   for(auto line = lines.begin(); line < lines.end(); ++line) {
     string str = *line;
@@ -230,58 +271,29 @@ void generate_code(vector<string> lines, const char *outputFilename) {
     if(!bin_opcode.success) { throw "Unknown opcode ("+opcode+") found"; }
     printf("opcode %x\n", bin_opcode.result);
     
+    vector<string> parameters;
+    split(trim(components.at(1)), ',', parameters);
 
-    string param1 = trim(components.at(1));
-    bool is1Addr = param1.c_str()[0] == '\'',
-      is1Data = param1.c_str()[0] == '!',
-      is1Float = param1.find(".") != string::npos;
-
-    const char* reg = "['!]?(\\d+\\.?\\d*)";
-    regex addr_to_value(reg);
-
-    if(!regex_match(param1.c_str(), addr_to_value)) {
-      printf("%s didn't match %s\n", param1.c_str(), reg);
-      continue;
-    }
-    
-    string param1_sanitized = regex_replace(param1.c_str(), addr_to_value, "$1");
-    printf("param1_sanitized %s\n", param1_sanitized.c_str());
-
-    if(!is1Float) {
-      long bin_param1 = toInt(param1);
-      int bin_param1_alkuperainen = bin_param1;
-      bin_param1 = bin_param1 << 3;
-      bin_param1 |= is1Addr? 0x4: 0x0;
-      bin_param1 |= is1Data? 0x2: 0x0;
-      bin_param1 |= is1Float? 0x1: 0x0;
-
-      testTypeTags (bin_param1, bin_param1_alkuperainen, is1Float, is1Data, is1Addr);
-    
-      printf("bin_param1 on %ld\n", bin_param1);
-    }
-    else {
-      float f_param1 = toFloat(param1),
-	f_param1_original = f_param1;
-
-      value converter;
-      converter.float_val = f_param1;
-      long bin_param1 = converter.int_val;
-            
-      bin_param1 = bin_param1 << 3;
-      bin_param1 |= is1Addr? 0x4: 0x0;
-      bin_param1 |= is1Data? 0x2: 0x0;
-      bin_param1 |= is1Float? 0x1: 0x0;
-
-      assert(bin_param1 >> 3 == converter.int_val);
-
-      testTypeTags(bin_param1, f_param1_original, is1Float, is1Data, is1Addr);
+    int param_count = parameters.size(),
+      buffer_size = sizeof(char)+param_count * sizeof(long);
+    char *buffer = new char[buffer_size];
+    buffer[0] = bin_opcode.result;
+    if(param_count > 0) {
+      result<long> r = makeFileParam(parameters.at(0));
+      if(r.success) {
+	long param1 = r.result;
+	buffer[1] = param1;
+	if(param_count > 1) {
+	  r = makeFileParam(parameters.at(1));
+	  if(r.success) {
+	    long param2 = r.result;
+	    buffer[1 + sizeof(long)] = param2;
+	  }
+	}
+      }
     }
 
-    // int param1_to_write = param1 | is1Addr?
-    // int bitmask = typeMask(is1Addr, is1Data, is1Float);
-    continue;
-    
-    fwrite(&bin_opcode.result, 1, 1, f);    
+    fwrite(buffer, buffer_size, 1, f);
   }
 
   fclose(f);
