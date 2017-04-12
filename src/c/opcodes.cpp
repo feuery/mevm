@@ -34,31 +34,31 @@ const char* opcode_to_str (opcodes c){
 
 result<opcodes> char_to_opcode(const char* c) {
   if(strcmp(c, "LABEL") == 0) {
-    return {LABEL, true};
+    return result<opcodes>(LABEL, true);
   }
   else if(strcmp(c, "JMP") == 0) {
-    return {JMP, true};
+    return result<opcodes>(JMP, true);
   }
   else if(strcmp(c, "CJMP") == 0) {
-    return {CJMP, true};
+    return result<opcodes>(CJMP, true);
   }
   else if(strcmp(c, "CONS") == 0) {
-    return {CONS, true};
+    return result<opcodes>(CONS, true);
   }
   else if(strcmp(c, "CAR") == 0) {
-    return {CAR, true};
+    return result<opcodes>(CAR, true);
   }
   else if(strcmp(c, "CDR") == 0) {
-    return {CDR, true};
+    return result<opcodes>(CDR, true);
   }
   else if(strcmp(c, "LAMBDA") == 0) {
-    return {LAMBDA, true};
+    return result<opcodes>(LAMBDA, true);
   }
   else if(strcmp(c, "INC") == 0) {
-    return {INC, true};
+    return result<opcodes>(INC, true);
   }
   else if(strcmp(c, "DEC") == 0) {
-    return {DEC, true};
+    return result<opcodes>(DEC, true);
   }
   else if(strcmp(c, "INC_1") == 0) {
     return {INC_1, true};
@@ -67,43 +67,43 @@ result<opcodes> char_to_opcode(const char* c) {
     return {DEC_1, true};
   }
   else if(strcmp(c, "MUL") == 0) {
-    return {MUL, true};
+    return result<opcodes>(MUL, true);
   }
   else if(strcmp(c, "DIV") == 0) {
-    return {DIV, true};
+    return result<opcodes>(DIV, true);
   }
   else if(strcmp(c, "RET") == 0) {
-    return {RET, true};
+    return result<opcodes>(RET, true);
   }
   else if(strcmp(c, "NOP") == 0) {
-    return {NOP, true};
+    return result<opcodes>(NOP, true);
   }
   else if(strcmp(c, "PUSH") == 0) {
-    return {PUSH, true};
+    return result<opcodes>(PUSH, true);
   }
   else if(strcmp(c, "POP") == 0) {
-    return {POP, true};
+    return result<opcodes>(POP, true);
   }
   else if(strcmp(c, "PEEK") == 0) {
-    return {PEEK, true};
+    return result<opcodes>(PEEK, true);
   }
   else if(strcmp(c, "GT") == 0) {
-    return {GT, true};
+    return result<opcodes>(GT, true);
   }
   else if(strcmp(c, "LT") == 0) {
-    return {LT, true};
+    return result<opcodes>(LT, true);
   }
   else if(strcmp(c, "GOEQ") == 0) {
-    return {GOEQ, true};
+    return result<opcodes>(GOEQ, true);
   }
   else if(strcmp(c, "LOEQ") == 0) {
-    return {LOEQ, true};
+    return result<opcodes>(LOEQ, true);
   }
   else if(strcmp(c, "EQ") == 0) {
-    return {EQ, true};
+    return result<opcodes>(EQ, true);
   }
   else if(strcmp(c, "CALL") == 0) {
-    return {CALL, true};
+    return result<opcodes>(CALL, true);
   }
-  return {JMP, false};
+  return result<opcodes>(JMP, false);
 }

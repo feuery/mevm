@@ -3,8 +3,11 @@
 
 template<typename T>
 struct result {
-  T result;
-  bool success;
+  T Result;
+  bool success = false;
+  result(T r, bool s): Result(r), success(s) { }
+
+  result() { }
 };
 
 enum opcodes: unsigned char {

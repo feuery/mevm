@@ -1,4 +1,8 @@
-lambda SUM
+.data
+	33,"aaaa",32.32,"asjdaid"
+
+.prog
+	lambda SUM
 	EQ -1, 0
 	CJMP END
 	CAR -1

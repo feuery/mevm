@@ -22,4 +22,17 @@ struct Either {
   }
 };
 
+template<typename A, typename B, typename C>
+struct Either3v {
+  A a;
+  B b;
+  C c;
+  
+  void operator=(Either3v<A, B, C> &b) {
+    a = b.a;
+    b = b.b;
+    c = b.c;
+  }
+};
+
 #endif //EITHER_H

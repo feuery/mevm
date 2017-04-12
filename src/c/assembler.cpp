@@ -41,27 +41,6 @@ Either<value_container, pointer_container> generateContainer(long Value) {
   return e;
 }
 
-// Either<value_container, pointer_container> generateContainer(float Value) {
-//   Either<value_container, pointer_container> e;
-//   int meta_bits = Value & 07;
-//   float real_value = Value >> 3;
-//   bool isAddr = meta_bits & 04,
-//     isData = meta_bits & 02,
-//     isFloat = meta_bits & 01;
-    
-//   assert(!(isData || isAddr));
-  
-//   value vvv;
-//   if(isFloat) {
-//     vvv.float_val = (float)(Value >> 3);
-//   }
-//   else vvv.int_val = real_value;
-//   value_container *v = new value_container(vvv, isFloat? FLOAT:INT);
-//   e.a = v;
-
-//   return e;
-// }
-
 long filesize(FILE* f)
 {
   fseek(f, 0, SEEK_END);
@@ -152,22 +131,6 @@ float toFloat(std::string& str)
   return strtof(str.c_str(), nullptr);
 }
 
-// isAddr ja isData ei voi olla yhtä aikaa true
-// ja jos jompikumpi kahdesta ekasta on tosi, osoitin ei voi olla float mutta ARVO VOI OLLA
-// unsigned int typeMask(bool isAddr, bool isData, bool isFloat)
-// {
-//   static unordered_map<bool, unordered_map<bool, unordered_map<bool, int>>> taulu =
-//     {{false, {{false, {{false, 0},
-// 		       {true, 1}}},
-// 	      {true, {{false, 2},
-// 		      {true, 3}}}}},
-//      {true, {{false, {{false, 4},
-// 		      {true, 5}}}}}};
-//   unsigned int sizeOf = sizeof(int);
-//   printf("sizeof = %d\n", sizeOf);
-//   return (taulu.at(isAddr).at(isData).at(isFloat)) << ((sizeOf * 32)-3);
-// }
-
 void testTypeTags (long bin_param1, int bin_param1_alkuperainen, bool isFloat, bool isData, bool isAddr) {
   if(!isFloat && !isData && !isAddr) {
     Either<value_container, pointer_container> reversed = generateContainer(bin_param1);
@@ -224,7 +187,7 @@ result<long> makeFileParam(string& p) {
 
     testTypeTags (bin_param1, bin_param1_alkuperainen, is1Float, is1Data, is1Addr);
     r.success = true;
-    r.result = bin_param1;
+    r.Result = bin_param1;
     return r;
   }
   else {
@@ -245,9 +208,89 @@ result<long> makeFileParam(string& p) {
     testTypeTags(bin_param1, f_param1_original, is1Float, is1Data, is1Addr);
 
     r.success = true;
-    r.result = bin_param1;
+    r.Result = bin_param1;
     return r;
   }
+}
+
+struct prog_data_loc { vector<string>::const_iterator prog_location; vector<string>::const_iterator data_location; };
+
+prog_data_loc getSectionLocations(vector<string> &lines) {
+  return {std::find_if(lines.begin(), lines.end(), [](string line) { return trim(line) == ".prog"; }),
+      std::find_if(lines.begin(), lines.end(), [](string line) { return trim(line) == ".data"; })};
+}
+
+bool isDigit(char c)
+{
+  bool result = c == '0' ||
+    c == '1' ||
+    c == '2' ||
+    c == '3' ||
+    c == '4' ||
+    c == '5' ||
+    c == '6' ||
+    c == '7' ||
+    c == '8' ||
+    c == '9' ||
+    c == '.';
+  return result;
+}
+
+vector<Either3v<result<string>, result<float>, result<int>>> parseDataSection(string& data) {
+  bool inString = false,
+    inDigit = false;
+  int lastTokenEnd = 0;
+  vector<Either3v<result<string>, result<float>, result<int>>> toret;
+  
+  for(unsigned int i = 0; i<data.size(); i++) {
+    string token = data.at(i)+"";
+    if(!inString && !inDigit) {
+      inDigit = isDigit(data.at(i));
+      inString = data.at(i) == '"';
+      if(inDigit || inString) lastTokenEnd = i + 1;
+    }
+    // Tää on rikki
+    else if(inDigit) {
+      inDigit = isDigit(data.at(i)) && i < data.size()-1;
+      if (!inDigit) {
+	// In between lastTokenEnd and i is a whole float or an int
+	int len = (i+1) - lastTokenEnd;
+	string substr = data.substr(lastTokenEnd - 1, len);
+
+	bool is_float = substr.find(".") != string::npos;
+	Either3v<result<string>, result<float>, result<int>> e;
+	if(is_float) {
+	  float rr = toFloat(substr);
+	  result<float> r;
+	  r.success = true;
+	  r.Result = rr;
+	  e.b = r;
+	}
+	else {
+	  result<int> r;
+	  r.success = true;
+	  r.Result = toInt(substr);
+	  e.c = r;
+	}
+	toret.push_back(e);
+      }
+    }
+    else if(inString) {
+      do { i++; } while(i<data.size() && data.at(i) != '"');
+      inString = false;
+      int len = i - lastTokenEnd;
+      string substr = data.substr(lastTokenEnd, len);
+
+      Either3v<result<string>, result<float>, result<int>> e;
+      result<string> r;
+      r.success = true;
+      r.Result = substr.c_str();
+      e.a = r;
+      toret.push_back(e);
+    }
+  }
+
+  return toret;
 }
 
 void generate_code(vector<string> lines, const char *outputFilename) {
@@ -257,7 +300,36 @@ void generate_code(vector<string> lines, const char *outputFilename) {
     return;
   }
 
-  for(auto line = lines.begin(); line < lines.end(); ++line) {
+  auto iterators = getSectionLocations(lines);
+  string data_list = "";
+
+  for(auto line = iterators.data_location + 1; line != lines.end() && line != iterators.prog_location; ++line) {
+    data_list += *line;
+  }
+
+  printf("data_list: %s\n", data_list.c_str());
+
+  vector<Either3v<result<string>, result<float>, result<int>>> dataSection = parseDataSection(data_list);
+  puts("Data-section!\n");
+  for(auto i = dataSection.begin(); i != dataSection.end(); ++i) {
+    auto ar = i->a;
+    auto br = i->b;
+    auto cr = i->c;
+    if(ar.success) {
+      printf("%s\n", ar.Result.c_str());
+    }
+    else if (br.success) {
+      printf("%f\n", br.Result);
+    }
+    else if (cr.success) {
+      printf("%d\n", cr.Result);
+    }
+    else puts("Wat?\n");
+  }
+  puts("End of data section");
+  return;
+
+  for(auto line = iterators.prog_location; line != lines.end() && line != iterators.data_location; ++line) {
     string str = *line;
     vector<string> components;
     split(str, ' ', components);
@@ -269,7 +341,7 @@ void generate_code(vector<string> lines, const char *outputFilename) {
     result<opcodes> bin_opcode = char_to_opcode(opcode.c_str());
 
     if(!bin_opcode.success) { throw "Unknown opcode ("+opcode+") found"; }
-    printf("opcode %x\n", bin_opcode.result);
+    printf("opcode %x\n", bin_opcode.Result);
     
     vector<string> parameters;
     split(trim(components.at(1)), ',', parameters);
@@ -277,16 +349,16 @@ void generate_code(vector<string> lines, const char *outputFilename) {
     int param_count = parameters.size(),
       buffer_size = sizeof(char)+param_count * sizeof(long);
     char *buffer = new char[buffer_size];
-    buffer[0] = bin_opcode.result;
+    buffer[0] = bin_opcode.Result;
     if(param_count > 0) {
       result<long> r = makeFileParam(parameters.at(0));
       if(r.success) {
-	long param1 = r.result;
+	long param1 = r.Result;
 	buffer[1] = param1;
 	if(param_count > 1) {
 	  r = makeFileParam(parameters.at(1));
 	  if(r.success) {
-	    long param2 = r.result;
+	    long param2 = r.Result;
 	    buffer[1 + sizeof(long)] = param2;
 	  }
 	}
