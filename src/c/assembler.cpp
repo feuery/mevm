@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <algorithm>
+#include <numeric>
 #include <regex>
 #include <unordered_map>
 
@@ -243,7 +244,7 @@ vector<Either3v<result<string>, result<float>, result<int>>> parseDataSection(st
   vector<Either3v<result<string>, result<float>, result<int>>> toret;
   
   for(unsigned int i = 0; i<data.size(); i++) {
-    string token = data.at(i)+"";
+    string token = ""+data.at(i);
     if(!inString && !inDigit) {
       inDigit = isDigit(data.at(i));
       inString = data.at(i) == '"';
@@ -293,6 +294,50 @@ vector<Either3v<result<string>, result<float>, result<int>>> parseDataSection(st
   return toret;
 }
 
+template<typename A, typename B, typename C>
+short containerSize(Either3v<result<A>, result<B>, result<C>> element) {
+  if(element.a.success)
+    return sizeof(element.a.Result);
+  else if(element.b.success)
+    return sizeof(element.b.Result);
+  else
+    return sizeof(element.c.Result);
+}
+
+short dataBufferSize(vector<Either3v<result<string>, result<float>, result<int>>> &vec) {
+  int dataLength = sizeof(short);
+  vector<short> sizes(vec.size());
+  transform(vec.begin(), vec.end(), sizes.begin(), [](Either3v<result<string>, result<float>, result<int>> element) {
+      return containerSize(element);
+    });
+  int amountOfElementLens = vec.size() * sizeof(short);
+  return dataLength + std::accumulate(sizes.begin(), sizes.end(), 0) + amountOfElementLens;
+}
+
+int copyToBuffer(void* buffer, Either3v<result<string>, result<float>, result<int>> e)
+{
+  result<string> rs = e.a;
+  result<float> rf = e.b;
+  result<int> ri = e.c;
+
+  if(rs.success) {
+    string& s = rs.Result;
+    const char* cs = s.c_str();
+    size_t bytes = s.size() * sizeof(char);
+    memcpy(buffer, cs, bytes);
+    return bytes;
+  }
+  else if (rf.success) {
+    float *b = (float*) buffer;
+    *b = rf.Result;
+    return sizeof(float);
+  }
+
+  int *i = (int*)buffer;
+  *i = ri.Result;
+  return sizeof(int);
+}
+
 void generate_code(vector<string> lines, const char *outputFilename) {
   FILE *f = fopen(outputFilename, "w");
   if (!f) {
@@ -309,26 +354,26 @@ void generate_code(vector<string> lines, const char *outputFilename) {
 
   printf("data_list: %s\n", data_list.c_str());
 
-  vector<Either3v<result<string>, result<float>, result<int>>> dataSection = parseDataSection(data_list);
-  puts("Data-section!\n");
-  for(auto i = dataSection.begin(); i != dataSection.end(); ++i) {
-    auto ar = i->a;
-    auto br = i->b;
-    auto cr = i->c;
-    if(ar.success) {
-      printf("%s\n", ar.Result.c_str());
-    }
-    else if (br.success) {
-      printf("%f\n", br.Result);
-    }
-    else if (cr.success) {
-      printf("%d\n", cr.Result);
-    }
-    else puts("Wat?\n");
-  }
-  puts("End of data section");
-  return;
+  assert(sizeof(short) == 2);
 
+  vector<Either3v<result<string>, result<float>, result<int>>> dataSection = parseDataSection(data_list);
+  short dataCount = dataSection.size();
+  int ioBufferSize = dataBufferSize(dataSection);
+  char ioBuffer[ioBufferSize];
+  *ioBuffer = dataCount;
+  int pointer = 2;
+  auto dataIterator = dataSection.begin();
+  do {
+    Either3v<result<string>, result<float>, result<int>> e = *dataIterator;
+    *(ioBuffer + pointer) = containerSize(e);
+    pointer += 2;
+    int copiedAmount = copyToBuffer(ioBuffer + pointer, e);
+    pointer += copiedAmount;
+    ++dataIterator;
+  } while(pointer < ioBufferSize && dataIterator != dataSection.end());
+
+  fwrite(ioBuffer, ioBufferSize, 1, f);
+  
   for(auto line = iterators.prog_location; line != lines.end() && line != iterators.data_location; ++line) {
     string str = *line;
     vector<string> components;
