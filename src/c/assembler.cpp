@@ -294,14 +294,13 @@ vector<Either3v<result<string>, result<float>, result<int>>> parseDataSection(st
   return toret;
 }
 
-template<typename A, typename B, typename C>
-short containerSize(Either3v<result<A>, result<B>, result<C>> element) {
+short containerSize(Either3v<result<string>, result<float>, result<int>> element) {
   if(element.a.success)
-    return sizeof(element.a.Result);
+    return element.a.Result.length() * sizeof(char);
   else if(element.b.success)
-    return sizeof(element.b.Result);
+    return sizeof(float);
   else
-    return sizeof(element.c.Result);
+    return sizeof(int);
 }
 
 short dataBufferSize(vector<Either3v<result<string>, result<float>, result<int>>> &vec) {
@@ -311,7 +310,8 @@ short dataBufferSize(vector<Either3v<result<string>, result<float>, result<int>>
       return containerSize(element);
     });
   int amountOfElementLens = vec.size() * sizeof(short);
-  return dataLength + std::accumulate(sizes.begin(), sizes.end(), 0) + amountOfElementLens;
+  int amountOfTypeTags = vec.size() * sizeof(char);
+  return dataLength + std::accumulate(sizes.begin(), sizes.end(), 0) + amountOfElementLens + amountOfTypeTags;
 }
 
 int copyToBuffer(void* buffer, Either3v<result<string>, result<float>, result<int>> e)
@@ -338,6 +338,23 @@ int copyToBuffer(void* buffer, Either3v<result<string>, result<float>, result<in
   return sizeof(int);
 }
 
+unsigned char getTypeTag(Either3v<result<string>, result<float>, result<int>> e) {
+  result<string> rs = e.a;
+  result<float> rf = e.b;
+
+  if(rs.success) {
+    return 3;
+  }
+  else if (rf.success) {
+    return 2;
+  }
+  return 1;
+}
+
+void zeroMem(char *buffer, int N) {
+  for (int i = 0; i < N; i++) buffer[i] = 0;
+}
+
 void generate_code(vector<string> lines, const char *outputFilename) {
   FILE *f = fopen(outputFilename, "w");
   if (!f) {
@@ -360,18 +377,24 @@ void generate_code(vector<string> lines, const char *outputFilename) {
   short dataCount = dataSection.size();
   int ioBufferSize = dataBufferSize(dataSection);
   char ioBuffer[ioBufferSize];
+  zeroMem(ioBuffer, ioBufferSize);
   *ioBuffer = dataCount;
+  printf("Datacount is %d\n", dataCount);
   int pointer = 2;
   auto dataIterator = dataSection.begin();
   do {
     Either3v<result<string>, result<float>, result<int>> e = *dataIterator;
-    *(ioBuffer + pointer) = containerSize(e);
+    *(ioBuffer + pointer) = getTypeTag(e);
+    pointer += 1;
+    short len = containerSize(e);
+    printf("Length is %d\n", len);
+    *(ioBuffer + pointer) = len;
     pointer += 2;
     int copiedAmount = copyToBuffer(ioBuffer + pointer, e);
     pointer += copiedAmount;
     ++dataIterator;
   } while(pointer < ioBufferSize && dataIterator != dataSection.end());
-
+  
   fwrite(ioBuffer, ioBufferSize, 1, f);
   
   for(auto line = iterators.prog_location; line != lines.end() && line != iterators.data_location; ++line) {

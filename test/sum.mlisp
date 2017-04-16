@@ -1,5 +1,5 @@
 .data
-	33,"aaaa",32.32,"asjdaid"
+	322.35,33,"aaaa","asjffffdaid"
 
 .prog
 	lambda SUM
