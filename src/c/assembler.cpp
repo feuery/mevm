@@ -75,6 +75,23 @@ std::string read_source(const char* src)
   return "";
 }
 
+std::vector<std::string> resplit(const std::string & s, std::string rgx_str = "\\s+") {
+  std::vector<std::string> elems;
+
+  std::regex rgx (rgx_str);
+
+  std::sregex_token_iterator iter(s.begin(), s.end(), rgx, -1);
+  std::sregex_token_iterator end;
+
+  while (iter != end)  {
+    elems.push_back(*iter);
+    ++iter;
+  }
+
+  return elems;
+
+}
+
 void split(const string& s, char c,
            vector<string>& v) {
   string::size_type i = 0;
@@ -161,6 +178,9 @@ void testTypeTags(long bin_param1, float bin_param1_alkuperainen, bool isFloat, 
   assert(f == bin_param1_alkuperainen);
 }
 
+const char *symbol_regex = "^[\\w|\\d]+$";
+unordered_map<string, long> label_internment;
+
 result<long> makeFileParam(string& p) {
   string param1 = trim(p);
   result<long> r;
@@ -168,10 +188,25 @@ result<long> makeFileParam(string& p) {
     is1Data = param1.c_str()[0] == '!',
     is1Float = param1.find(".") != string::npos;
 
-  const char* reg = "['!]?(\\d+\\.?\\d*)";
+  const char* reg = "-?['!]?(\\d+\\.?\\d*)";
   regex addr_to_value(reg);
 
-  if(!regex_match(param1.c_str(), addr_to_value)) {
+  if(!regex_match(param1.c_str(), addr_to_value) &&
+     regex_match(param1.c_str(), regex(symbol_regex))) {
+
+       if(label_internment.find(param1) != label_internment.end()) {
+	 r.Result = label_internment.at(param1);
+	 r.success = true;
+       }
+       else {
+	 long val = label_internment.size() + 1;
+	 r.Result = val;
+	 label_internment[param1] = val;
+	 r.success = true;
+       }
+       return r;	 
+  }
+  else {
     r.success = false;
     return r;
   }
@@ -250,7 +285,6 @@ vector<Either3v<result<string>, result<float>, result<int>>> parseDataSection(st
       inString = data.at(i) == '"';
       if(inDigit || inString) lastTokenEnd = i + 1;
     }
-    // Tää on rikki
     else if(inDigit) {
       inDigit = isDigit(data.at(i)) && i < data.size()-1;
       if (!inDigit) {
@@ -397,40 +431,67 @@ void generate_code(vector<string> lines, const char *outputFilename) {
   
   fwrite(ioBuffer, ioBufferSize, 1, f);
   
-  for(auto line = iterators.prog_location; line != lines.end() && line != iterators.data_location; ++line) {
+  for(auto line = iterators.prog_location+1; line != lines.end() && line != iterators.data_location; ++line) {
     string str = *line;
-    vector<string> components;
-    split(str, ' ', components);
-    if(!components.size()) continue;
-
+    vector<string> components = resplit(trim(str), "[\\s|,]+");
+    
+    // split(str, ' ', components);
+   
     string opcode = toUpper(trim(components.at(0)));
+    if(opcode == "") continue;
     printf("Opcode %s\n", opcode.c_str());
 
     result<opcodes> bin_opcode = char_to_opcode(opcode.c_str());
 
-    if(!bin_opcode.success) { throw "Unknown opcode ("+opcode+") found"; }
-    printf("opcode %x\n", bin_opcode.Result);
-    
-    vector<string> parameters;
-    split(trim(components.at(1)), ',', parameters);
+    if(!bin_opcode.success) { printf("Unknown opcode (%s) found\n", opcode.c_str()); throw ""; }
+    // printf("opcode %x\n", bin_opcode.Result);
 
-    int param_count = parameters.size(),
-      buffer_size = sizeof(char)+param_count * sizeof(long);
+    int buffer_size = sizeof(char)+2 * sizeof(long);
     char *buffer = new char[buffer_size];
     buffer[0] = bin_opcode.Result;
-    if(param_count > 0) {
-      result<long> r = makeFileParam(parameters.at(0));
-      if(r.success) {
-	long param1 = r.Result;
-	buffer[1] = param1;
-	if(param_count > 1) {
-	  r = makeFileParam(parameters.at(1));
-	  if(r.success) {
-	    long param2 = r.Result;
-	    buffer[1 + sizeof(long)] = param2;
+    
+    if(components.size()>1) {
+      vector<string> parameters = components;
+      parameters.erase(parameters.begin());
+
+      int param_count = parameters.size();
+      if(param_count > 0) {
+	result<long> r = makeFileParam(parameters.at(0));
+	if(r.success) {
+	  long param1 = r.Result;
+	  buffer[1] = param1;
+	  if(param_count > 1) {
+	    r = makeFileParam(parameters.at(1));
+	    if(r.success) {
+	      long param2 = r.Result;
+	      buffer[1 + sizeof(long)] = param2;
+	    }
+	    else {
+	      printf("Extracting second param, %s, failed\n", parameters.at(1).c_str());
+	      buffer[1 + sizeof(long)] = 0;
+	    }
+	  }
+	  else {
+	    puts("Param_count<1");
+	    buffer[1 + sizeof(long)] = 0;
 	  }
 	}
+	else {
+	  printf("Extracting first param, %s, failed\n", parameters.at(0).c_str());
+	  buffer[1] = 0L;
+	  buffer[1 + sizeof(long)] = 0L;
+	}
       }
+      else {
+	puts("Param_count < 0");
+	buffer[1] = 0L;
+	buffer[1 + sizeof(long)] = 0L;
+      }
+    }
+    else {
+      puts("Parameterless instruction");
+      buffer[1] = 0L;
+      buffer[1 + sizeof(long)] = 0L;
     }
 
     fwrite(buffer, buffer_size, 1, f);
@@ -438,5 +499,3 @@ void generate_code(vector<string> lines, const char *outputFilename) {
 
   fclose(f);
 }
-
-  
