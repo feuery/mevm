@@ -68,55 +68,61 @@ int main(int argc, char** argv) {
   printf(".prog section starts at %d\n", pointer);
 
   while(pointer < howmuch) {
-    unsigned char opcode = (unsigned char)(*(buffer + pointer));
+    unsigned char opcode_code = (unsigned char)(*(buffer + pointer));
     pointer += sizeof(unsigned char);
+    opcodes opcode = (opcodes)opcode_code;
     long param1 = (long)(*(buffer + pointer));
     pointer += sizeof(long);
     long param2 = (long)(*(buffer + pointer));
     pointer += sizeof(long);
 
-    auto param1_container = generateContainer(param1),
-      param2_container = generateContainer(param2);
-
     printf("Opcode is %s\n", opcode_to_str((opcodes)opcode));
+
+    if(opcode != LAMBDA && opcode != CALL) {
+      // param1 isn't a symbol
+      auto param1_container = generateContainer(param1),
+	param2_container = generateContainer(param2);
     
-    if(param1_container.a) {
-      if(param1_container.a->type == FLOAT) {
-	puts("Param1's type is float");
-	printf("Param1's value is %f\n", param1_container.a->v.float_val);
+      if(param1_container.a) {
+	if(param1_container.a->type == FLOAT) {
+	  puts("Param1's type is float");
+	  printf("Param1's value is %f\n", param1_container.a->v.float_val);
+	}
+	else {
+	  puts("Param1's type is int");
+	  printf("Param1's value is %d\n", param1_container.a->v.int_val);
+	}      
       }
-      else {
-	puts("Param1's type is int");
-	printf("Param1's value is %d\n", param1_container.a->v.int_val);
-      }      
-    }
-    else if(param1_container.b) {
-      if(param1_container.b->is_data) puts("Param1 is a data pointer");
-      else puts("Param1 is an env pointer!");
+      else if(param1_container.b) {
+	if(param1_container.b->is_data) puts("Param1 is a data pointer");
+	else puts("Param1 is an env pointer!");
 
-      printf("Param1's pointer value is %d\n", param1_container.b->value);
-    }
-    else puts("Param1 doesn't have a meaningful value");
-
-    if(param2_container.a) {
-      if(param2_container.a->type == FLOAT) {
-	puts("Param2's type is float");
-	printf("Param2's value is %f\n", param2_container.a->v.float_val);
+	printf("Param1's pointer value is %d\n", param1_container.b->value);
       }
-      else {
-	puts("Param2's type is int");
-	printf("Param2's value is %d\n", param2_container.a->v.int_val);
-      }      
-    }
-    else if(param2_container.b) {
-      if(param2_container.b->is_data) puts("Param2 is a data pointer");
-      else puts("Param2 is an env pointer!");
+      else puts("Param1 doesn't have a meaningful value");
 
-      printf("Param2's pointer value is %d\n", param2_container.b->value);
+      if(param2_container.a) {
+	if(param2_container.a->type == FLOAT) {
+	  puts("Param2's type is float");
+	  printf("Param2's value is %f\n", param2_container.a->v.float_val);
+	}
+	else {
+	  puts("Param2's type is int");
+	  printf("Param2's value is %d\n", param2_container.a->v.int_val);
+	}      
+      }
+      else if(param2_container.b) {
+	if(param2_container.b->is_data) puts("Param2 is a data pointer");
+	else puts("Param2 is an env pointer!");
+
+	printf("Param2's pointer value is %d\n", param2_container.b->value);
+      }
+      else puts("Param2 doesn't have a meaningful value");  
     }
-    else puts("Param2 doesn't have a meaningful value");
+    else {
+      printf("param1's value is %lu, it's probably a symbol\n", param1);
+    }
   }
-  
   return 0;
 }
 			       

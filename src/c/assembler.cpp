@@ -191,15 +191,54 @@ result<long> makeFileParam(string& p) {
   const char* reg = "-?['!]?(\\d+\\.?\\d*)";
   regex addr_to_value(reg);
 
-  if(!regex_match(param1.c_str(), addr_to_value) &&
-     regex_match(param1.c_str(), regex(symbol_regex))) {
+  if(regex_match(param1.c_str(), addr_to_value)) {
+    string param1_sanitized = regex_replace(param1.c_str(), addr_to_value, "$1");
+
+    if(!is1Float) {
+      long bin_param1 = toInt(param1);
+      int bin_param1_alkuperainen = bin_param1;
+      bin_param1 = bin_param1 << 3;
+      bin_param1 |= is1Addr? 0x4: 0x0;
+      bin_param1 |= is1Data? 0x2: 0x0;
+      bin_param1 |= is1Float? 0x1: 0x0;
+
+      testTypeTags (bin_param1, bin_param1_alkuperainen, is1Float, is1Data, is1Addr);
+      r.success = true;
+      r.Result = bin_param1;
+      return r;
+    }
+    else {
+      float f_param1 = toFloat(param1),
+	f_param1_original = f_param1;
+
+      value converter;
+      converter.float_val = f_param1;
+      long bin_param1 = converter.int_val;
+            
+      bin_param1 = bin_param1 << 3;
+      bin_param1 |= is1Addr? 0x4: 0x0;
+      bin_param1 |= is1Data? 0x2: 0x0;
+      bin_param1 |= is1Float? 0x1: 0x0;
+
+      assert(bin_param1 >> 3 == converter.int_val);
+
+      testTypeTags(bin_param1, f_param1_original, is1Float, is1Data, is1Addr);
+
+      r.success = true;
+      r.Result = bin_param1;
+      return r;
+    }
+  }
+  else if(regex_match(param1.c_str(), regex(symbol_regex))) {
 
        if(label_internment.find(param1) != label_internment.end()) {
+	 printf("Found symbol %s's value %lu\n", param1.c_str(), label_internment.at(param1));
 	 r.Result = label_internment.at(param1);
 	 r.success = true;
        }
        else {
 	 long val = label_internment.size() + 1;
+	 printf("Created a new value for %s: %lu\n", param1.c_str(), val);
 	 r.Result = val;
 	 label_internment[param1] = val;
 	 r.success = true;
@@ -208,43 +247,6 @@ result<long> makeFileParam(string& p) {
   }
   else {
     r.success = false;
-    return r;
-  }
-    
-  string param1_sanitized = regex_replace(param1.c_str(), addr_to_value, "$1");
-
-  if(!is1Float) {
-    long bin_param1 = toInt(param1);
-    int bin_param1_alkuperainen = bin_param1;
-    bin_param1 = bin_param1 << 3;
-    bin_param1 |= is1Addr? 0x4: 0x0;
-    bin_param1 |= is1Data? 0x2: 0x0;
-    bin_param1 |= is1Float? 0x1: 0x0;
-
-    testTypeTags (bin_param1, bin_param1_alkuperainen, is1Float, is1Data, is1Addr);
-    r.success = true;
-    r.Result = bin_param1;
-    return r;
-  }
-  else {
-    float f_param1 = toFloat(param1),
-      f_param1_original = f_param1;
-
-    value converter;
-    converter.float_val = f_param1;
-    long bin_param1 = converter.int_val;
-            
-    bin_param1 = bin_param1 << 3;
-    bin_param1 |= is1Addr? 0x4: 0x0;
-    bin_param1 |= is1Data? 0x2: 0x0;
-    bin_param1 |= is1Float? 0x1: 0x0;
-
-    assert(bin_param1 >> 3 == converter.int_val);
-
-    testTypeTags(bin_param1, f_param1_original, is1Float, is1Data, is1Addr);
-
-    r.success = true;
-    r.Result = bin_param1;
     return r;
   }
 }
@@ -421,7 +423,7 @@ void generate_code(vector<string> lines, const char *outputFilename) {
     *(ioBuffer + pointer) = getTypeTag(e);
     pointer += 1;
     short len = containerSize(e);
-    printf("Length is %d\n", len);
+    // printf("Length is %d\n", len);
     *(ioBuffer + pointer) = len;
     pointer += 2;
     int copiedAmount = copyToBuffer(ioBuffer + pointer, e);
@@ -444,7 +446,7 @@ void generate_code(vector<string> lines, const char *outputFilename) {
     result<opcodes> bin_opcode = char_to_opcode(opcode.c_str());
 
     if(!bin_opcode.success) { printf("Unknown opcode (%s) found\n", opcode.c_str()); throw ""; }
-    // printf("opcode %x\n", bin_opcode.Result);
+    printf("Hexopcode %x\n", bin_opcode.Result);
 
     int buffer_size = sizeof(char)+2 * sizeof(long);
     char *buffer = new char[buffer_size];
@@ -456,40 +458,42 @@ void generate_code(vector<string> lines, const char *outputFilename) {
 
       int param_count = parameters.size();
       if(param_count > 0) {
+	printf("Param1 is %s\n", parameters.at(0).c_str());
 	result<long> r = makeFileParam(parameters.at(0));
 	if(r.success) {
 	  long param1 = r.Result;
 	  buffer[1] = param1;
 	  if(param_count > 1) {
+	    printf("Param2 is %s\n", parameters.at(1).c_str());
 	    r = makeFileParam(parameters.at(1));
 	    if(r.success) {
 	      long param2 = r.Result;
 	      buffer[1 + sizeof(long)] = param2;
 	    }
 	    else {
-	      printf("Extracting second param, %s, failed\n", parameters.at(1).c_str());
+	      // printf("Extracting second param, %s, failed\n", parameters.at(1).c_str());
 	      buffer[1 + sizeof(long)] = 0;
 	    }
 	  }
 	  else {
-	    puts("Param_count<1");
+	    // puts("Param_count<1");
 	    buffer[1 + sizeof(long)] = 0;
 	  }
 	}
 	else {
-	  printf("Extracting first param, %s, failed\n", parameters.at(0).c_str());
+	  // printf("Extracting first param, %s, failed\n", parameters.at(0).c_str());
 	  buffer[1] = 0L;
 	  buffer[1 + sizeof(long)] = 0L;
 	}
       }
       else {
-	puts("Param_count < 0");
+	// puts("Param_count < 0");
 	buffer[1] = 0L;
 	buffer[1 + sizeof(long)] = 0L;
       }
     }
     else {
-      puts("Parameterless instruction");
+      // puts("Parameterless instruction");
       buffer[1] = 0L;
       buffer[1 + sizeof(long)] = 0L;
     }

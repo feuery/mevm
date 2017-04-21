@@ -1,0 +1,40 @@
+Assembling ./source.mlispa
+data_list: 	322.35,33,"aaaa","asjffffdaid"
+Datacount is 4
+Opcode LAMBDA
+Hexopcode 6
+Param1 is SUM
+Created a new value for SUM: 1
+Opcode EQ
+Hexopcode 16
+Param1 is -1
+Param2 is 0
+Opcode CJMP
+Hexopcode 2
+Param1 is END
+Created a new value for END: 2
+Opcode CAR
+Hexopcode 4
+Param1 is -1
+Opcode INC
+Hexopcode 7
+Param1 is -2
+Opcode PUSH
+Hexopcode f
+Param1 is -2
+Opcode CDR
+Hexopcode 5
+Param1 is -1
+Opcode CALL
+Hexopcode 17
+Param1 is 0
+Param2 is 2
+Opcode LABEL
+Hexopcode 0
+Param1 is END
+Found symbol END's value 2
+Opcode PUSH
+Hexopcode f
+Param1 is -2
+Opcode RET
+Hexopcode d

@@ -1,0 +1,56 @@
+4 is the count of data elements
+Read a float: 322.350006
+Read an int: 33
+Read a string: aaaa
+Read a string: asjffffdaid
+Data section loaded
+.prog section starts at 37
+Opcode is LAMBDA
+param1's value is 1, it's probably a symbol
+Opcode is EQ
+Param1's type is int
+Param1's value is -1
+Param2's type is int
+Param2's value is 0
+Opcode is CJMP
+Param1 is a data pointer
+Param1's pointer value is 0
+Param2's type is int
+Param2's value is 0
+Opcode is CAR
+Param1's type is int
+Param1's value is -1
+Param2's type is int
+Param2's value is 0
+Opcode is INC
+Param1's type is int
+Param1's value is -2
+Param2's type is int
+Param2's value is 0
+Opcode is PUSH
+Param1's type is int
+Param1's value is -2
+Param2's type is int
+Param2's value is 0
+Opcode is CDR
+Param1's type is int
+Param1's value is -1
+Param2's type is int
+Param2's value is 0
+Opcode is CALL
+param1's value is 0, it's probably a symbol
+Opcode is LABEL
+Param1 is a data pointer
+Param1's pointer value is 0
+Param2's type is int
+Param2's value is 0
+Opcode is PUSH
+Param1's type is int
+Param1's value is -2
+Param2's type is int
+Param2's value is 0
+Opcode is RET
+Param1's type is int
+Param1's value is 0
+Param2's type is int
+Param2's value is 0
