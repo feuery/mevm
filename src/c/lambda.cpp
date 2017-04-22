@@ -101,7 +101,20 @@ void Lambda::call() {
       // ++op; should at the top of the loop should make this jump to the line following the label
       op = jmp_target;
       break;
-    }			       
+    }
+
+    case CJMP: {
+      assert(op->param1_box->a);
+      auto jmp_target = labels[op->param1_box->a->v.int_val];
+
+      value_container *c = _stack.top();
+      _stack.pop();
+
+      if((c->type == INT && c->v.int_val != 0) ||
+	 (c->type == FLOAT && c->v.float_val != 0.0f))
+	op = jmp_target;
+      break;
+    }
 
     default:
       printf("NOPping %s\n", opcode_to_str(op->code));
