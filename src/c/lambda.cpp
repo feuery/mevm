@@ -50,6 +50,7 @@
       }\
 
 std::unordered_map<int, value_container*> data_section;
+std::unordered_map<int, vector<op>::iterator> labels;
 
 void Lambda::call() {
   for(vector<op>::iterator op = code.begin(); op != code.end(); ++op) {
@@ -84,6 +85,16 @@ void Lambda::call() {
       break;
     }
 
+    case LABEL: {
+      assert(op->param1_box->a);
+      int unboxed = op->param1_box->a->v.int_val;
+      auto result = labels.find(unboxed);
+      if(result == labels.end()) {
+	labels[unboxed] = op;
+      }
+      break;
+    }
+      
     default:
       printf("NOPping %s\n", opcode_to_str(op->code));
       break;
