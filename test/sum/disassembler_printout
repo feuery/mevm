@@ -1,10 +1,12 @@
-4 is the count of data elements
+6 is the count of data elements
 Read a float: 322.350006
 Read an int: 33
 Read a string: aaaa
 Read a string: asjffffdaid
+Read an int: 22
+Read a string: aaaa
 Data section loaded
-.prog section starts at 37
+.prog section starts at 51
 Opcode is LAMBDA
 param1's value is 1, it's probably a symbol
 Opcode is EQ

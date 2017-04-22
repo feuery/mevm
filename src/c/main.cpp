@@ -32,7 +32,7 @@ int main(int argc, char** argv)
   if(opt == 'c') {
     printf("Assembling %s\n", optarg);
 
-    generate_code(getLines(optarg), "out.mlisp");   
+    generate_code(getLines(optarg), "out.mlisp");
     
     return 0;
   }

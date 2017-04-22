@@ -1,6 +1,6 @@
 Assembling ./source.mlispa
-data_list: 	322.35,33,"aaaa","asjffffdaid"
-Datacount is 4
+data_list: 	322.35,33,"aaaa","asjffffdaid",22,"aaaa"
+Datacount is 6
 Opcode LAMBDA
 Hexopcode 6
 Param1 is SUM
