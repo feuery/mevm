@@ -94,7 +94,15 @@ void Lambda::call() {
       }
       break;
     }
-      
+
+    case JMP: {
+      assert(op->param1_box->a);
+      auto jmp_target = labels[op->param1_box->a->v.int_val];
+      // ++op; should at the top of the loop should make this jump to the line following the label
+      op = jmp_target;
+      break;
+    }			       
+
     default:
       printf("NOPping %s\n", opcode_to_str(op->code));
       break;
