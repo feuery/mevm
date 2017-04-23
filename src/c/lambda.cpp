@@ -145,6 +145,22 @@ void Lambda::call() {
       
     }
 
+    case CAR: {
+      value_container *cons = _stack.top();
+      assert(cons->type == CONS_type);
+      pointer_container *caar = (pointer_container*)(cons->cons_ptr >> 4);
+      _stack.push(getEnv(*caar));
+      break;
+    }
+
+    case CDR: {
+      value_container *cons = _stack.top();
+      assert(cons->type == CONS_type);
+      pointer_container *caar = (pointer_container*)(cons->cons_ptr & 0xF);
+      _stack.push(getEnv(*caar));
+      break;
+    }
+
     default:
       printf("NOPping %s\n", opcode_to_str(op->code));
       break;
