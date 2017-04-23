@@ -120,6 +120,12 @@ value_container* Lambda::call() {
       setEnv(*(op->param1_box->b), c);
       break;
     }
+    case PEEK: {
+      assert(op->param1_box->b);
+      value_container* c = _stack.top();
+      setEnv(*(op->param1_box->b), c);
+      break;
+    }
 
     case LABEL: {
       assert(op->param1_box->a);
