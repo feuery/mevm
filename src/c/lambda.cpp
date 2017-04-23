@@ -64,7 +64,7 @@
 std::unordered_map<int, value_container*> data_section;
 std::unordered_map<int, vector<op>::iterator> labels;
 
-void Lambda::call() {
+value_container* Lambda::call() {
   for(vector<op>::iterator op = code.begin(); op != code.end(); ++op) {
     switch(op->code) {
     case INC: {
@@ -185,11 +185,22 @@ void Lambda::call() {
       break;
     }
 
+    case RET: {
+      value_container *top = _stack.top();
+      _stack.pop();
+      while(value_container *c = _stack.top()) {
+	if(c->type == CONS_type) delete c;
+	_stack.pop();
+      }
+      return top;
+    }
+      
     default:
       printf("NOPping %s\n", opcode_to_str(op->code));
       break;
     }
   }
+  return nullptr;
 }
 
 value_container* Lambda::getEnv(pointer_container addr)

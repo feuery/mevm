@@ -58,7 +58,7 @@ public:
   vector<value_container*> params;
   stack<value_container*> _stack;
 
-  void call();
+  value_container* call();
 
   value_container* getEnv(pointer_container addr);
   void setEnv(pointer_container addr, value_container* ptr);
