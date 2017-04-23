@@ -71,6 +71,30 @@ void Lambda::call() {
       doMath(+=);
       break;
     }
+    case INC_1: {
+      assert(op->param1_box->b);
+      pointer_container *p = op->param1_box->b;
+      value_container *top = _stack.top();
+      _stack.pop();
+      if(top->type == INT) {
+	top->v.int_val++;
+      }
+      else top->v.float_val++;
+      setEnv(*p, top);
+      break;
+    }
+    case DEC_1: {
+      assert(op->param1_box->b);
+      pointer_container *p = op->param1_box->b;
+      value_container *top = _stack.top();
+      _stack.pop();
+      if(top->type == INT) {
+	top->v.int_val--;
+      }
+      else top->v.float_val--;
+      setEnv(*p, top);
+      break;
+    }
     case DEC: {
       doMath(-=);
       break;
