@@ -3,51 +3,63 @@
 #include <lambda.h>
 
 #define doMath(opp) value_container *top = _stack.top();\
-      switch(top->type) {\
-      case INT: {\
-	int top_int = top->v.int_val;\
-				     \
-	if(op->param1_box->b) {					\
-	  pointer_container *vm_address = op->param1_box->b;	\
-	  value_container *machine_box = getEnv(*vm_address);	\
+  switch(top->type) {						\
+  case INT: {							\
+    int top_int = top->v.int_val;				\
 								\
-	  switch(machine_box->type) {				\
-	  case INT: {						\
-	    machine_box->v.int_val opp top_int;			\
-	    break;						\
-	  }							\
-	  case FLOAT: {						\
-	    machine_box->v.float_val opp top_int;			\
-	    break;							\
-	  }							\
-	  }							\
-	}							\
-	else throw "op->param1_box->b is null";			\
-	break;\
-      }\
-      case FLOAT: {\
-	float top_float = top->v.float_val;\
-\
-	if(op->param1_box->b) {					\
-	  pointer_container *vm_address = op->param1_box->b;	\
-	  value_container *machine_box = getEnv(*vm_address);	\
+    if(op->param1_box->b) {					\
+      pointer_container *vm_address = op->param1_box->b;	\
+      value_container *machine_box = getEnv(*vm_address);	\
 								\
-	  switch(machine_box->type) {				\
-	  case INT: {						\
-	    machine_box->v.int_val opp top_float;			\
-	    break;						\
-	  }							\
-	  case FLOAT: {						\
-	    machine_box->v.float_val opp top_float;		\
-	    break;						\
-	  }							\
-	  }							\
-	}\
-	else  throw "op->param1_box->b is null";	\
-	\
-	break;\
-      }\
-      }\
+      switch(machine_box->type) {				\
+      case INT: {						\
+	machine_box->v.int_val opp top_int;			\
+	break;							\
+      }								\
+      case FLOAT: {						\
+	machine_box->v.float_val opp top_int;			\
+	break;							\
+      }								\
+      default: {						\
+	puts("Illegal state in doMath - macro");		\
+	throw "";						\
+      };							\
+      }								\
+    }								\
+    else throw "op->param1_box->b is null";			\
+    break;							\
+  }								\
+  case FLOAT: {							\
+    float top_float = top->v.float_val;				\
+								\
+    if(op->param1_box->b) {					\
+      pointer_container *vm_address = op->param1_box->b;	\
+      value_container *machine_box = getEnv(*vm_address);	\
+								\
+      switch(machine_box->type) {				\
+      case INT: {						\
+	machine_box->v.int_val opp top_float;			\
+	break;							\
+      }								\
+      case FLOAT: {						\
+	machine_box->v.float_val opp top_float;			\
+	break;							\
+      }								\
+      default: {						\
+	puts("Illegal state in doMath - macro");		\
+	throw "";						\
+      };							\
+      }								\
+    }								\
+    else  throw "op->param1_box->b is null";			\
+								\
+    break;							\
+  }								\
+  default: {							\
+    puts("Illegal state in doMath - macro");			\
+    throw "";							\
+  };								\
+  }								\
 
 std::unordered_map<int, value_container*> data_section;
 std::unordered_map<int, vector<op>::iterator> labels;
@@ -114,6 +126,23 @@ void Lambda::call() {
 	 (c->type == FLOAT && c->v.float_val != 0.0f))
 	op = jmp_target;
       break;
+    }
+
+      // Wish we had a GC
+    case CONS: {
+      assert(op->param1_box->b);
+      assert(op->param2_box->b);
+
+      pointer_container *a = op->param1_box->b,
+	*b = op->param2_box->b;
+      long long car = (long long)a,
+	cdr = (long long)b;
+
+      value_container *cons_container = new value_container(CONS_type);
+      cons_container->cons_ptr = (car << 4) | cdr;
+      _stack.push(cons_container);
+      break;
+      
     }
 
     default:

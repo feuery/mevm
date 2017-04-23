@@ -15,12 +15,16 @@ union value {
   float float_val;
 };
 
-enum primitive { INT, FLOAT };
+enum primitive { INT, FLOAT, CONS_type };
 
 struct value_container {
   value_container(value vv, primitive t): v(vv), type(t) { }
+  value_container(primitive t): type(t) { }
   value v;
+  // Remember to delete by hand every value_container whose type is CONS_type
   primitive type;
+  // Consses are (currently) never serialized to a binary so this being a bit hacky is ok
+  long long cons_ptr;
 };
   
 

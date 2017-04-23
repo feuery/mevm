@@ -1,3 +1,4 @@
+#include <cassert>
 #include <unistd.h>
 #include <cstdio>
 #include <cstring>
@@ -27,6 +28,9 @@ int main(int argc, char** argv)
 {
   // man 3 getopt
 
+  assert(sizeof(int*) == 4);
+  assert(sizeof(long long) == 8);
+  
   int opt = getopt(argc, argv, "c:");
 
   if(opt == 'c') {
