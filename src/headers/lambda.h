@@ -25,6 +25,34 @@ struct value_container {
   primitive type;
   // Consses are (currently) never serialized to a binary so this being a bit hacky is ok
   long long cons_ptr;
+
+  bool operator<(value_container& other) {
+    switch(type) {
+    case INT: {
+      switch(other.type) {
+      case INT: return v.int_val < other.v.int_val;
+      case FLOAT: return v.int_val < other.v.float_val;
+      default: goto err;
+      }
+    }
+    case FLOAT: {
+      switch(other.type) {
+      case INT: return v.float_val < other.v.int_val;
+      case FLOAT: return v.float_val < other.v.float_val;
+      default: goto err;
+      }
+    }
+    default: {
+    err:
+      puts("< not defined for cons cells");
+      throw "";
+    }
+    }
+  }
+
+  bool operator>(value_container& other) {
+    return other < *this;
+  }
 };
   
 

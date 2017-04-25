@@ -107,6 +107,22 @@ value_container* Lambda::call() {
       doMath(/=);
       break;
     }
+    case GT: {
+      pointer_container *a = op->param1_box->b,
+	*b = op->param2_box->b;
+      assert(a);
+      assert(b);
+      value_container *val_a = getEnv(*a),
+	*val_b = getEnv(*b);
+      bool gt_p = *val_a > *val_b;
+
+      value v;
+      v.int_val = gt_p? 1:0;
+      value_container vv(v, INT);
+      // Ja tää pitäis pushata stackiin
+      // Mutta stack on täynnä pelkkiä pointtereita!
+      // Stack-lähestymistapaa vois miettiä uudelleen...
+    }
     case PUSH: {
       if(!op->param1_box->a) throw "Has to push a value";
       value_container *val = op->param1_box->a;
