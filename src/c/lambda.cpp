@@ -9,7 +9,7 @@
 
 std::unordered_map<int, value_container*> data_section;
 std::unordered_map<int, vector<op>::iterator> labels;
-value_container* RET_register = nullptr;
+value_container RET_register;
 
 primitive Lambda::TYPEOF(Either<value_container, pointer_container> *e) {
   if(e->a) {
@@ -47,7 +47,30 @@ result<value_container> Lambda::call() {
       doMath(/=);
       break;
     }
-    case GT: { break; }
+    case LT: {
+      assert(op->param1_box->b);
+      assert(op->param2_box->b);
+
+      int v1 = intVal(op->param1_box),
+	v2 = intVal(op->param2_box);
+      value v;
+      v.int_val = v1 < v2? 1:0;
+      value_container vc(v, INT);
+      RET_register = vc;
+      break;
+    }
+    case GT: {
+      assert(op->param1_box->b);
+      assert(op->param2_box->b);
+
+      int v1 = intVal(op->param1_box),
+	v2 = intVal(op->param2_box);
+      value v;
+      v.int_val = v1 > v2? 1:0;
+      value_container vc(v, INT);
+      RET_register = vc;
+      break;
+    }
     case LABEL: {
       assert(op->param1_box->a);
       int unboxed = op->param1_box->a->v.int_val;
@@ -90,8 +113,8 @@ result<value_container> Lambda::call() {
       long long car = (long long)a,
 	cdr = (long long)b;
 
-      value_container *cons_container = new value_container(CONS_type);
-      cons_container->cons_ptr = (car << 4) | cdr;
+      value_container cons_container(CONS_type);
+      cons_container.cons_ptr = (car << 4) | cdr;
       RET_register = cons_container;
       break;      
     }
@@ -103,7 +126,7 @@ result<value_container> Lambda::call() {
       value_container *cons = getEnv(*op->param1_box->b);
       assert(cons->type == CONS_type);
       pointer_container *caar = (pointer_container*)(cons->cons_ptr >> 4);
-      RET_register = getEnv(*caar);      
+      RET_register = *getEnv(*caar);      
       break;
     }
 
@@ -114,7 +137,7 @@ result<value_container> Lambda::call() {
       value_container *cons = getEnv(*op->param1_box->b);
       assert(cons->type == CONS_type);
       pointer_container *caar = (pointer_container*)(cons->cons_ptr & 0xF);
-      RET_register = getEnv(*caar);
+      RET_register = *getEnv(*caar);
       break;
     }
 

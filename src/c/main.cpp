@@ -40,32 +40,8 @@ int main(int argc, char** argv)
     
     return 0;
   }
+
+  puts("Currently supported opts: -c ./path/to/assembly.mlispa");
   
-  Lambda l;
-  value k, iso_k;
-  k.int_val = 12;
-  iso_k.int_val = 3;
-
-  value_container k_c(k, INT),
-    iso_k_c(iso_k, INT);
-  
-  
-  l.params.push_back(&k_c);
-  l.params.push_back(&iso_k_c);
-
-  auto push_param = create_push_param(200);
-  push_param.delete_on_exit = true;
-
-  auto oppi = op(PUSH, &push_param);
-  l.code.push_back(oppi);
-
-  auto mul_param = create_mul_param(-2);
-  mul_param.delete_on_exit = true;
-
-  auto mul = op(INC, &mul_param);
-  l.code.push_back(mul);
-  l.call();
-  printf("iso_k: %d, k: %d \n", iso_k_c.v.int_val,
-	 k_c.v.int_val);
   return 0;
 }

@@ -63,7 +63,7 @@ struct pointer_container {
 };
 
 extern std::unordered_map<int, value_container*> data_section;
-extern value_container* RET_register;
+extern value_container RET_register;
 
 class op {
  public:
