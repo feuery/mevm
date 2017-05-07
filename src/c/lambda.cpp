@@ -71,6 +71,46 @@ result<value_container> Lambda::call() {
       RET_register = vc;
       break;
     }
+
+    case EQ: {
+      assert(op->param1_box->b);
+      assert(op->param2_box->b);
+
+      int v1 = intVal(op->param1_box),
+	v2 = intVal(op->param2_box);
+      value v;
+      v.int_val = v1 == v2? 1:0;
+      value_container vc(v, INT);
+      RET_register = vc;
+      break;
+    }
+
+    case GOEQ: {
+      assert(op->param1_box->b);
+      assert(op->param2_box->b);
+
+      int v1 = intVal(op->param1_box),
+	v2 = intVal(op->param2_box);
+      value v;
+      v.int_val = v1 >= v2? 1:0;
+      value_container vc(v, INT);
+      RET_register = vc;
+      break;
+    }
+
+    case LOEQ: {
+      assert(op->param1_box->b);
+      assert(op->param2_box->b);
+
+      int v1 = intVal(op->param1_box),
+	v2 = intVal(op->param2_box);
+      value v;
+      v.int_val = v1 <= v2? 1:0;
+      value_container vc(v, INT);
+      RET_register = vc;
+      break;
+    }
+      
     case LABEL: {
       assert(op->param1_box->a);
       int unboxed = op->param1_box->a->v.int_val;
