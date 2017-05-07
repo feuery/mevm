@@ -96,7 +96,10 @@ private:
 
   primitive TYPEOF(Either<value_container, pointer_container> *e);
   int intVal(Either<value_container, pointer_container> *e);
-
+  void cons_to_vector(value_container* head, vector<value_container*>& v);
 };
+
+// It's loader's job to fill this up and remove all the LAMBDA herp-derp opcodes
+extern std::unordered_map<int, Lambda> loaded_lambdas;
 
 #endif //LAMBDA_H

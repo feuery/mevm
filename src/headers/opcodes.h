@@ -17,20 +17,21 @@ enum opcodes: unsigned char {
   CONS,
   CAR,
   CDR,
-  LAMBDA,
+  LAMBDA, 			// Missing. If this ends up to the Lambda::call() loop, it's a sign of a loader malfunction
   INC,
   DEC, 
   MUL,
   DIV,
   RET,
-  NOP,
+  NOP,				// Missing, default: puts("Nopping"); handles this
   MOV,
   GT,
   LT,
-  GOEQ,
-  LOEQ,
-  EQ,
-  CALL};
+  GOEQ,				
+  LOEQ,				
+  EQ,				
+  CALL			        
+};
 
 const char* opcode_to_str (opcodes c);
 result<opcodes> char_to_opcode(const char* c);

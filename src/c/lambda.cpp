@@ -9,6 +9,7 @@
 
 std::unordered_map<int, value_container*> data_section;
 std::unordered_map<int, vector<op>::iterator> labels;
+std::unordered_map<int, Lambda> loaded_lambdas;
 value_container RET_register;
 
 primitive Lambda::TYPEOF(Either<value_container, pointer_container> *e) {
@@ -29,11 +30,45 @@ int Lambda::intVal(Either<value_container, pointer_container> *e) {
   return v->v.int_val;
 }
 
+// This is used on assigning params to a called lambda
+void Lambda::cons_to_vector(value_container* head, vector<value_container*>& v) {
+  pointer_container *caar = (pointer_container*)(head->cons_ptr >> 4),
+    *cddr = (pointer_container*)(head->cons_ptr & 0xF);
+  value_container *val = getEnv(*caar),
+    *cdr = cddr != nullptr? getEnv(*cddr): nullptr;
+  
+  v.push_back(val);
+  if(cdr != nullptr) {
+    cons_to_vector(cdr, v);
+  }
+}
+
 result<value_container> Lambda::call() {
   for(vector<op>::iterator op = code.begin(); op != code.end(); ++op) {
     switch(op->code) {
+    case CALL: {
+      assert(op->param1_box->a);
+      assert(op->param2_box->b);
+      
+      Lambda callee = loaded_lambdas[op->param1_box->a->v.int_val];
+      callee.params.clear();
+
+      value_container *params_head = getEnv(*op->param2_box->b);
+      
+      cons_to_vector(params_head, callee.params);
+      auto r = callee.call();
+      if(!r.success) {
+	puts("Calling lambda returned failed result, interpreter might be in an undefined state now");
+	break;
+      }
+
+      RET_register = r.Result;
+      break;
+    }
+      
     case INC: {
       doMath(+=);
+      break;
     }
     case DEC: {
       doMath(-=);
