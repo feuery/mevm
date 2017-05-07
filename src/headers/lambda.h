@@ -20,6 +20,7 @@ enum primitive { INT, FLOAT, CONS_type };
 struct value_container {
   value_container(value vv, primitive t): v(vv), type(t) { }
   value_container(primitive t): type(t) { }
+  value_container() { }
   value v;
   // Remember to delete by hand every value_container whose type is CONS_type
   primitive type;
@@ -62,6 +63,7 @@ struct pointer_container {
 };
 
 extern std::unordered_map<int, value_container*> data_section;
+extern value_container* RET_register;
 
 class op {
  public:
@@ -84,14 +86,16 @@ public:
   vector<op> code;
   vector<value_container*> env;
   vector<value_container*> params;
-  stack<value_container*> _stack;
 
-  value_container* call();
+  result<value_container> call();
 
   value_container* getEnv(pointer_container addr);
   void setEnv(pointer_container addr, value_container* ptr);
   
 private:
+
+  primitive TYPEOF(Either<value_container, pointer_container> *e);
+  int intVal(Either<value_container, pointer_container> *e);
 
 };
 

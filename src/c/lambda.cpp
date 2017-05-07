@@ -2,98 +2,38 @@
 #include <cassert>
 #include <lambda.h>
 
-#define doMath(opp) value_container *top = _stack.top();\
-  switch(top->type) {						\
-  case INT: {							\
-    int top_int = top->v.int_val;				\
-								\
-    if(op->param1_box->b) {					\
-      pointer_container *vm_address = op->param1_box->b;	\
-      value_container *machine_box = getEnv(*vm_address);	\
-								\
-      switch(machine_box->type) {				\
-      case INT: {						\
-	machine_box->v.int_val opp top_int;			\
-	break;							\
-      }								\
-      case FLOAT: {						\
-	machine_box->v.float_val opp top_int;			\
-	break;							\
-      }								\
-      default: {						\
-	puts("Illegal state in doMath - macro");		\
-	throw "";						\
-      };							\
-      }								\
-    }								\
-    else throw "op->param1_box->b is null";			\
-    break;							\
-  }								\
-  case FLOAT: {							\
-    float top_float = top->v.float_val;				\
-								\
-    if(op->param1_box->b) {					\
-      pointer_container *vm_address = op->param1_box->b;	\
-      value_container *machine_box = getEnv(*vm_address);	\
-								\
-      switch(machine_box->type) {				\
-      case INT: {						\
-	machine_box->v.int_val opp top_float;			\
-	break;							\
-      }								\
-      case FLOAT: {						\
-	machine_box->v.float_val opp top_float;			\
-	break;							\
-      }								\
-      default: {						\
-	puts("Illegal state in doMath - macro");		\
-	throw "";						\
-      };							\
-      }								\
-    }								\
-    else  throw "op->param1_box->b is null";			\
-								\
-    break;							\
-  }								\
-  default: {							\
-    puts("Illegal state in doMath - macro");			\
-    throw "";							\
-  };								\
-  }								\
+#define doMath(opp) assert(op->param1_box->b);\
+      assert(op->param2_box->a || op->param2_box->a);\
+      value_container *a = getEnv(*op->param1_box->b);\
+      a->v.int_val opp intVal(op->param2_box);\
 
 std::unordered_map<int, value_container*> data_section;
 std::unordered_map<int, vector<op>::iterator> labels;
+value_container* RET_register = nullptr;
 
-value_container* Lambda::call() {
+primitive Lambda::TYPEOF(Either<value_container, pointer_container> *e) {
+  if(e->a) {
+    value_container *v = e->a;
+    return v->type;
+  }
+  else {
+    value_container *v = getEnv(*e->b);
+    return v->type;
+  }
+}
+
+int Lambda::intVal(Either<value_container, pointer_container> *e) {
+  if(e->a)
+    return e->a->v.int_val;
+  value_container *v = getEnv(*e->b);
+  return v->v.int_val;
+}
+
+result<value_container> Lambda::call() {
   for(vector<op>::iterator op = code.begin(); op != code.end(); ++op) {
     switch(op->code) {
     case INC: {
       doMath(+=);
-      break;
-    }
-    case INC_1: {
-      assert(op->param1_box->b);
-      pointer_container *p = op->param1_box->b;
-      value_container *top = _stack.top();
-      _stack.pop();
-      if(top->type == INT) {
-	top->v.int_val++;
-      }
-      else top->v.float_val++;
-      setEnv(*p, top);
-      break;
-    }
-    case DEC_1: {
-      assert(op->param1_box->b);
-      pointer_container *p = op->param1_box->b;
-      value_container *top = _stack.top();
-      _stack.pop();
-      if(top->type == INT) {
-	top->v.int_val--;
-      }
-      else top->v.float_val--;
-      setEnv(*p, top);
-      break;
     }
     case DEC: {
       doMath(-=);
@@ -107,42 +47,7 @@ value_container* Lambda::call() {
       doMath(/=);
       break;
     }
-    case GT: {
-      pointer_container *a = op->param1_box->b,
-	*b = op->param2_box->b;
-      assert(a);
-      assert(b);
-      value_container *val_a = getEnv(*a),
-	*val_b = getEnv(*b);
-      bool gt_p = *val_a > *val_b;
-
-      value v;
-      v.int_val = gt_p? 1:0;
-      value_container vv(v, INT);
-      // Ja tää pitäis pushata stackiin
-      // Mutta stack on täynnä pelkkiä pointtereita!
-      // Stack-lähestymistapaa vois miettiä uudelleen...
-    }
-    case PUSH: {
-      if(!op->param1_box->a) throw "Has to push a value";
-      value_container *val = op->param1_box->a;
-      _stack.push(val);
-      break;
-    }
-    case POP: {
-      if(!op->param1_box->b) throw "Can't POP to null";
-      value_container* c = _stack.top();
-      _stack.pop();
-      setEnv(*(op->param1_box->b), c);
-      break;
-    }
-    case PEEK: {
-      assert(op->param1_box->b);
-      value_container* c = _stack.top();
-      setEnv(*(op->param1_box->b), c);
-      break;
-    }
-
+    case GT: { break; }
     case LABEL: {
       assert(op->param1_box->a);
       int unboxed = op->param1_box->a->v.int_val;
@@ -163,10 +68,11 @@ value_container* Lambda::call() {
 
     case CJMP: {
       assert(op->param1_box->a);
+      assert(op->param2_box->b);
+      
       auto jmp_target = labels[op->param1_box->a->v.int_val];
 
-      value_container *c = _stack.top();
-      _stack.pop();
+      value_container *c = getEnv(*op->param2_box->b);
 
       if((c->type == INT && c->v.int_val != 0) ||
 	 (c->type == FLOAT && c->v.float_val != 0.0f))
@@ -186,35 +92,43 @@ value_container* Lambda::call() {
 
       value_container *cons_container = new value_container(CONS_type);
       cons_container->cons_ptr = (car << 4) | cdr;
-      _stack.push(cons_container);
-      break;
-      
+      RET_register = cons_container;
+      break;      
     }
 
     case CAR: {
-      value_container *cons = _stack.top();
+      assert(op->param1_box->b);
+      assert(op->param2_box->a);
+      
+      value_container *cons = getEnv(*op->param1_box->b);
       assert(cons->type == CONS_type);
       pointer_container *caar = (pointer_container*)(cons->cons_ptr >> 4);
-      _stack.push(getEnv(*caar));
+      RET_register = getEnv(*caar);      
       break;
     }
 
     case CDR: {
-      value_container *cons = _stack.top();
+      assert(op->param1_box->b);
+      assert(op->param2_box->a);
+      
+      value_container *cons = getEnv(*op->param1_box->b);
       assert(cons->type == CONS_type);
       pointer_container *caar = (pointer_container*)(cons->cons_ptr & 0xF);
-      _stack.push(getEnv(*caar));
+      RET_register = getEnv(*caar);
       break;
     }
 
     case RET: {
-      value_container *top = _stack.top();
-      _stack.pop();
-      while(value_container *c = _stack.top()) {
-	if(c->type == CONS_type) delete c;
-	_stack.pop();
-      }
-      return top;
+      assert(op->param1_box->a || op->param1_box->b);
+      int i = intVal(op->param1_box);
+      primitive t = TYPEOF(op->param1_box);
+      value v;
+      v.int_val = i;
+      value_container vc(v, t);
+
+      result<value_container> r(vc, true);
+      
+      return r;
     }
       
     default:
@@ -222,7 +136,9 @@ value_container* Lambda::call() {
       break;
     }
   }
-  return nullptr;
+
+  result<value_container> r;
+  return r;
 }
 
 value_container* Lambda::getEnv(pointer_container addr)
