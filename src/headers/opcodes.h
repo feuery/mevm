@@ -24,6 +24,7 @@ enum opcodes: unsigned char {
   DIV,
   RET,
   NOP,
+  MOV,
   GT,
   LT,
   GOEQ,

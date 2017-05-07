@@ -153,6 +153,21 @@ result<value_container> Lambda::call() {
       
       return r;
     }
+
+    case MOV: {
+      assert(op->param1_box->a || op->param1_box->b);
+      assert(op->param2_box->b);
+
+      value_container *dst = getEnv(*op->param2_box->b);
+      if(op->param1_box->a)
+	*dst = *op->param1_box->a;
+      else {
+	value_container *src = getEnv(*op->param1_box->b);
+	*dst = *src;
+      }
+      
+      break;
+    }
       
     default:
       printf("NOPping %s\n", opcode_to_str(op->code));
@@ -169,7 +184,10 @@ value_container* Lambda::getEnv(pointer_container addr)
   int val = addr.value;
   if(!addr.is_data) {
     if(val == 0) throw "Can't get variables from addr 0";
-    if (val < 0) { return params.at(-(val+1)); }
+    if (val < 0) {
+      if (val == -666) return &RET_register;
+      return params.at(-(val+1));
+    }
     else return env.at(val-1);
   }
   else return data_section[val]; 
@@ -181,7 +199,10 @@ void Lambda::setEnv(pointer_container addr, value_container* ptr)
   if(!addr.is_data) {
     if(val == 0) throw "Can't set variables to addr 0";
     val--;
-    if (val < 0) { params[-(val+1)] = ptr; }
+    if (val < 0) {
+      if(val == -666) RET_register = *ptr;
+      else params[-(val+1)] = ptr;
+    }
     else env[val-1] = ptr;
   }
   else data_section[val] = ptr;
