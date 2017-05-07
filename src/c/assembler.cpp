@@ -205,7 +205,6 @@ result<long> makeFileParam(string& p) {
       testTypeTags (bin_param1, bin_param1_alkuperainen, is1Float, is1Data, is1Addr);
       r.success = true;
       r.Result = bin_param1;
-      return r;
     }
     else {
       float f_param1 = toFloat(param1),
@@ -226,29 +225,34 @@ result<long> makeFileParam(string& p) {
 
       r.success = true;
       r.Result = bin_param1;
-      return r;
     }
   }
   else if(regex_match(param1.c_str(), regex(symbol_regex))) {
 
-       if(label_internment.find(param1) != label_internment.end()) {
-	 printf("Found symbol %s's value %lu\n", param1.c_str(), label_internment.at(param1));
-	 r.Result = label_internment.at(param1);
-	 r.success = true;
-       }
-       else {
-	 long val = label_internment.size() + 1;
-	 printf("Created a new value for %s: %lu\n", param1.c_str(), val);
-	 r.Result = val;
-	 label_internment[param1] = val;
-	 r.success = true;
-       }
-       return r;	 
+    if(label_internment.find(param1) != label_internment.end()) {
+      printf("Found symbol %s's value %lu\n", param1.c_str(), label_internment.at(param1));
+      r.Result = label_internment.at(param1);
+      r.success = true;
+    }
+    else {
+      long val = label_internment.size() + 1;
+      printf("Created a new value for %s: %lu\n", param1.c_str(), val);
+      r.Result = val;
+      label_internment[param1] = val;
+      r.success = true;
+    }
+  }
+  else if(param1 == "RET") {
+    long l = -666 << 3;
+    l |= 0x4;
+    r.success = true;
+    r.Result = l;
+    
   }
   else {
     r.success = false;
-    return r;
   }
+  return r;
 }
 
 struct prog_data_loc { vector<string>::const_iterator prog_location; vector<string>::const_iterator data_location; };
