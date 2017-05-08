@@ -3,14 +3,14 @@
 
 .prog
 	lambda SUM
-	EQ -1, 0
-	CJMP END
-	CAR -1
-	INC -2
-	PUSH -2
+	EQ '-1, 0
+	CJMP END, RET
+	;; cons, value
+	CAR '-1, '1
+	INC '33
+	;; This code isn't currently required to make sense
 	CDR -1
 	CALL 0, 2
 	
 	LABEL END
-	PUSH -2
 	RET

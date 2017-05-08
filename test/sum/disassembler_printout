@@ -11,27 +11,22 @@ Opcode is LAMBDA
 param1's value is 1, it's probably a symbol
 Opcode is EQ
 Param1's type is int
-Param1's value is -1
+Param1's value is 0
 Param2's type is int
 Param2's value is 0
 Opcode is CJMP
 Param1 is a data pointer
 Param1's pointer value is 0
-Param2's type is int
-Param2's value is 0
+Param2 is a data pointer
+Param2's pointer value is 0
 Opcode is CAR
 Param1's type is int
-Param1's value is -1
+Param1's value is 0
 Param2's type is int
 Param2's value is 0
 Opcode is INC
-Param1's type is int
-Param1's value is -2
-Param2's type is int
-Param2's value is 0
-Opcode is PUSH
-Param1's type is int
-Param1's value is -2
+Param1 is an env pointer!
+Param1's pointer value is 0
 Param2's type is int
 Param2's value is 0
 Opcode is CDR
@@ -44,11 +39,6 @@ param1's value is 0, it's probably a symbol
 Opcode is LABEL
 Param1 is a data pointer
 Param1's pointer value is 0
-Param2's type is int
-Param2's value is 0
-Opcode is PUSH
-Param1's type is int
-Param1's value is -2
 Param2's type is int
 Param2's value is 0
 Opcode is RET

@@ -444,7 +444,7 @@ void generate_code(vector<string> lines, const char *outputFilename) {
     // split(str, ' ', components);
    
     string opcode = toUpper(trim(components.at(0)));
-    if(opcode == "") continue;
+    if(opcode == "" || opcode == ";;") continue;
     printf("Opcode %s\n", opcode.c_str());
 
     result<opcodes> bin_opcode = char_to_opcode(opcode.c_str());
