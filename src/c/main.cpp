@@ -27,9 +27,6 @@ Either<value_container, pointer_container> create_mul_param(int addr)
 int main(int argc, char** argv)
 {
   // man 3 getopt
-
-  assert(sizeof(int*) == 4);
-  assert(sizeof(long long) == 8);
   
   int opt = getopt(argc, argv, "c:");
 

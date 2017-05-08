@@ -17,6 +17,11 @@ union value {
 
 enum primitive { INT, FLOAT, CONS_type };
 
+struct pointer_container {
+  int value;
+  bool is_data = false;
+};
+
 struct value_container {
   value_container(value vv, primitive t): v(vv), type(t) { }
   value_container(primitive t): type(t) { }
@@ -24,8 +29,17 @@ struct value_container {
   value v;
   // Remember to delete by hand every value_container whose type is CONS_type
   primitive type;
-  // Consses are (currently) never serialized to a binary so this being a bit hacky is ok
-  long long cons_ptr;
+
+  // This is fugly
+  pointer_container *car, *cdr;
+
+  value_container& operator=(value_container& other) {
+    v = other.v;
+    type = other.type;
+    car = other.car;
+    cdr = other.cdr;
+    return other;
+  }
 
   bool operator<(value_container& other) {
     switch(type) {
@@ -54,12 +68,6 @@ struct value_container {
   bool operator>(value_container& other) {
     return other < *this;
   }
-};
-  
-
-struct pointer_container {
-  int value;
-  bool is_data = false;
 };
 
 extern std::unordered_map<int, value_container*> data_section;

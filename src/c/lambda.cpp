@@ -32,8 +32,8 @@ int Lambda::intVal(Either<value_container, pointer_container> *e) {
 
 // This is used on assigning params to a called lambda
 void Lambda::cons_to_vector(value_container* head, vector<value_container*>& v) {
-  pointer_container *caar = (pointer_container*)(head->cons_ptr >> 4),
-    *cddr = (pointer_container*)(head->cons_ptr & 0xF);
+  pointer_container *caar = head->car,
+    *cddr = head->cdr;
   value_container *val = getEnv(*caar),
     *cdr = cddr != nullptr? getEnv(*cddr): nullptr;
   
@@ -185,11 +185,10 @@ result<value_container> Lambda::call() {
 
       pointer_container *a = op->param1_box->b,
 	*b = op->param2_box->b;
-      long long car = (long long)a,
-	cdr = (long long)b;
 
       value_container cons_container(CONS_type);
-      cons_container.cons_ptr = (car << 4) | cdr;
+      cons_container.car = a;
+      cons_container.cdr = b;
       RET_register = cons_container;
       break;      
     }
@@ -200,7 +199,7 @@ result<value_container> Lambda::call() {
       
       value_container *cons = getEnv(*op->param1_box->b);
       assert(cons->type == CONS_type);
-      pointer_container *caar = (pointer_container*)(cons->cons_ptr >> 4);
+      pointer_container *caar = cons->car;
       RET_register = *getEnv(*caar);      
       break;
     }
@@ -211,7 +210,7 @@ result<value_container> Lambda::call() {
       
       value_container *cons = getEnv(*op->param1_box->b);
       assert(cons->type == CONS_type);
-      pointer_container *caar = (pointer_container*)(cons->cons_ptr & 0xF);
+      pointer_container *caar = cons->cdr;
       RET_register = *getEnv(*caar);
       break;
     }
